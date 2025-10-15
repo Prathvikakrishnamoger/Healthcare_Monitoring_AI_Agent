@@ -1,0 +1,15 @@
+# Ignore virtual environment
+.venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Secrets
+.env
+
+# SQLite database
+health_data.db
+
+# VS Code settings (optional)
+.vscode/
