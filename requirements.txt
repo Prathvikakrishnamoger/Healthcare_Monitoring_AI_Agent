@@ -1,10 +1,5 @@
-streamlit
-langchain
-pandas
-numpy
-requests
-sqlite3
+streamlit 
+pandas 
 sqlalchemy 
 python-dotenv 
 tabulate 
-
