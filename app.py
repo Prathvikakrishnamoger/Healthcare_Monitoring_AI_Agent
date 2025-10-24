@@ -106,3 +106,34 @@ if recs:
         st.write(f"- {r.type.upper()} | {r.value} | {r.recorded_at.strftime('%Y-%m-%d %H:%M')}")
 else:
     st.info("No health records yet.")
+# ---------------------- CHATBOT SECTION ----------------------
+st.markdown("---")
+st.subheader("💬 Chatbot Assistant (text commands)")
+
+# helper to safely rerun across Streamlit versions (optional)
+def safe_rerun():
+    try:
+        st.experimental_rerun()
+    except Exception:
+        st.markdown("<script>window.location.reload()</script>", unsafe_allow_html=True)
+
+from chatbot import handle_query
+
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+query = st.text_input("Ask the assistant (try 'help')", key="chat_in")
+send = st.button("Send")
+
+if send and query.strip():
+    answer = handle_query(user.id, query)
+    st.session_state.chat_history.append(("You: " + query, "Bot: " + answer))
+    # try to refresh view so new med appears in lists
+    safe_rerun()
+
+# show history (most recent first)
+for user_msg, bot_msg in st.session_state.chat_history[::-1]:
+    st.write(user_msg)
+    st.write(bot_msg)
+
+
