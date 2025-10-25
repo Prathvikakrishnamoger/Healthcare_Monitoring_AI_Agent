@@ -3,7 +3,32 @@ import streamlit as st
 import datetime
 from models import init_db, get_engine_and_session, User, Medication, HealthRecord
 
-# Initialize database
+# --------- Helpers: validation & time parsing ---------
+import re
+import datetime as _dt
+
+def validate_time_str(tstr):
+    """Return True if 'HH:MM' 24h format."""
+    return bool(re.match(r'^[0-2]?\d:[0-5]\d$', tstr))
+
+def validate_dose(dose):
+    """Basic dose validation: not empty and reasonable length."""
+    if not dose: 
+        return True   # dose can be empty (optional), allow it
+    return 1 <= len(dose) <= 60
+
+def minutes_until(time_hhmm):
+    """Return minutes from now until the given HH:MM (int). Can be negative."""
+    now = _dt.datetime.now()
+    try:
+        t = _dt.datetime.strptime(time_hhmm, "%H:%M").time()
+    except Exception:
+        return None
+    med_dt = _dt.datetime.combine(now.date(), t)
+    return int((med_dt - now).total_seconds() // 60)
+
+
+#------------------------ Initialize database
 init_db()
 engine, SessionLocal = get_engine_and_session()
 session = SessionLocal()
@@ -11,7 +36,14 @@ session = SessionLocal()
 st.set_page_config(page_title="Healthcare Monitoring AI Agent", layout="centered")
 st.title("💊 Healthcare Monitoring AI Agent — Week 2 Day 2")
 
-# Sidebar: user management
+# ------------------Quick alert for any critical recent records (last 24 hours)
+from app_utils import parse_bp, parse_sugar
+import datetime as _dt
+
+
+
+
+#----------------- Sidebar: user management
 st.sidebar.header("Select or Add User")
 users = session.query(User).all()
 user_choice = st.sidebar.selectbox("Select User", [u.name for u in users] if users else ["No users found"])
@@ -39,6 +71,23 @@ if not users:
 
 user = session.query(User).filter_by(name=user_choice).first()
 st.header(f"Welcome, {user.name}")
+#--------------alert code---------
+recent_critical = []
+now = _dt.datetime.now()
+day_ago = now - _dt.timedelta(hours=24)
+recs_24 = session.query(HealthRecord).filter(HealthRecord.user_id==user.id, HealthRecord.recorded_at >= day_ago).all()
+for r in recs_24:
+    if r.type == "bp":
+        if "crisis" in parse_bp(r.value).lower() or "emergency" in parse_bp(r.value).lower():
+            recent_critical.append((r, parse_bp(r.value)))
+    if r.type == "sugar":
+        if "emergency" in parse_sugar(r.value).lower() or "very high" in parse_sugar(r.value).lower() or "low" in parse_sugar(r.value).lower():
+            recent_critical.append((r, parse_sugar(r.value)))
+
+if recent_critical:
+    st.markdown("---")
+    st.error("🚨 Recent critical readings detected. Check the Recent Health Records section for details.")
+
 
 # Add medication form
 st.subheader("Add Medication 💊")
@@ -50,21 +99,30 @@ with st.form("add_med_form"):
     notes = st.text_area("Notes (optional)")
     submit_med = st.form_submit_button("Add Medication")
     if submit_med:
-        if mname.strip():
+        # build time string
+        tstr = time_input.strftime("%H:%M")
+
+        # validations
+        if not mname.strip():
+            st.error("Medication name is required.")
+        elif not validate_dose(dose.strip()):
+            st.error("Dose looks invalid (too long).")
+        elif not validate_time_str(tstr):
+            st.error("Time must be in HH:MM format.")
+        else:
             med = Medication(
                 user_id=user.id,
                 name=mname.strip(),
                 dose=dose.strip(),
-                time=time_input.strftime("%H:%M"),
+                time=tstr,
                 frequency=freq,
                 notes=notes.strip()
             )
             session.add(med)
             session.commit()
-            st.success(f"✅ Added {mname}")
-            st.rerun()
-        else:
-            st.error("Please enter a medication name.")
+            st.success(f"✅ Added {med.name} at {med.time}")
+            safe_rerun()
+
 
 # Show medication list
 st.subheader("📋 Medication List")
@@ -98,24 +156,87 @@ with st.form("add_health_form"):
         else:
             st.error("Please enter a value.")
 
-# Display recent records
+# ---------------- Show recent health records ----------------
 st.subheader("Recent Health Records 🧾")
-recs = session.query(HealthRecord).filter_by(user_id=user.id).order_by(HealthRecord.recorded_at.desc()).limit(10).all()
-if recs:
-    for r in recs:
-        st.write(f"- {r.type.upper()} | {r.value} | {r.recorded_at.strftime('%Y-%m-%d %H:%M')}")
-else:
+
+# import parsers (make sure app_utils.py is in same folder)
+from app_utils import parse_bp, parse_sugar
+
+records = session.query(HealthRecord).filter_by(user_id=user.id).order_by(HealthRecord.recorded_at.desc()).limit(20).all()
+if not records:
     st.info("No health records yet.")
+else:
+    # show newest first
+    for r in records:
+        ts = r.recorded_at.strftime('%Y-%m-%d %H:%M')
+        note = f" — {r.notes}" if r.notes else ""
+        extra = ""
+        alert = None
+
+        # classify reading
+        if r.type == "bp":
+            extra = parse_bp(r.value)
+            # flag critical BP readings
+            if "crisis" in extra.lower() or "emergency" in extra.lower():
+                alert = f"⚠ {extra}"
+        elif r.type == "sugar":
+            extra = parse_sugar(r.value)
+            # flag critical sugar readings
+            if "emergency" in extra.lower() or "very high" in extra.lower() or "low" in extra.lower():
+                alert = f"⚠ {extra}"
+        elif r.type == "weight":
+            extra = f"{r.value}"
+
+        display = f"- *{r.type.upper()}* | {r.value} | {extra} | {ts}{note}"
+
+        # style output
+        if alert:
+            st.warning(display)
+            st.error(alert)
+        else:
+            st.write(display)
+     
+# ---------------- Reminders (show nearby meds) ----------------
+st.markdown("---")
+st.subheader("⏰ Reminders")
+
+now = _dt.datetime.now()
+meds_all = session.query(Medication).filter_by(user_id=user.id).all()
+reminders = []
+for m in meds_all:
+    mins = minutes_until(m.time)
+    if mins is None:
+        continue
+    # show meds within -60 .. +180 minutes window
+    if -60 <= mins <= 180:
+        status = "TAKE NOW" if mins <= 0 else f"In {mins} min"
+        reminders.append((mins, m, status))
+
+if not reminders:
+    st.info("No immediate reminders.")
+else:
+    # sort by soonest (most negative first means already due; we want those first)
+    reminders.sort(key=lambda x: x[0])
+    for mins, m, status in reminders:
+        if status == "TAKE NOW":
+            st.warning(f"⚠️ TAKE NOW — {m.name} ({m.dose or 'no dose specified'}) scheduled at {m.time}")
+        else:
+            st.write(f"🔔 {m.name} — {m.dose or ''} at {m.time} — {status}")
+
 # ---------------------- CHATBOT SECTION ----------------------
 st.markdown("---")
 st.subheader("💬 Chatbot Assistant (text commands)")
 
-# helper to safely rerun across Streamlit versions (optional)
-def safe_rerun():
-    try:
-        st.experimental_rerun()
-    except Exception:
-        st.markdown("<script>window.location.reload()</script>", unsafe_allow_html=True)
+
+# safe rerun helper (only if not present above)
+try:
+    safe_rerun
+except NameError:
+    def safe_rerun():
+        try:
+            st.rerun()
+        except Exception:
+            st.markdown("<script>window.location.reload()</script>", unsafe_allow_html=True)
 
 from chatbot import handle_query
 
@@ -125,15 +246,12 @@ if "chat_history" not in st.session_state:
 query = st.text_input("Ask the assistant (try 'help')", key="chat_in")
 send = st.button("Send")
 
-if send and query.strip():
+if send and query and query.strip():
     answer = handle_query(user.id, query)
     st.session_state.chat_history.append(("You: " + query, "Bot: " + answer))
-    # try to refresh view so new med appears in lists
     safe_rerun()
 
-# show history (most recent first)
 for user_msg, bot_msg in st.session_state.chat_history[::-1]:
     st.write(user_msg)
     st.write(bot_msg)
-
 
