@@ -1,15 +1,22 @@
-# Ignore virtual environment
-.venv/
-
-# Python cache files
-__pycache__/
-*.pyc
-
-# Secrets
+# Ignore virtual environments
+venv/
 .env
 
-# SQLite database
-health_data.db
+# Ignore Python cache and temporary files
+_pycache_/
+*.pyc
+*.pyo
+*.pyd
 
-# VS Code settings (optional)
-.vscode/
+# Ignore SQLite databases
+*.db
+
+# Ignore Streamlit temporary folders
+.streamlit/
+logs/
+.cache/
+
+# Ignore any OS or editor files
+.DS_Store
+Thumbs.db
+*.log

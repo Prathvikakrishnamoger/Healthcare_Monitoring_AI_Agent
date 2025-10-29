@@ -15,28 +15,36 @@ import datetime
 engine, SessionLocal = get_engine_and_session()
 session = SessionLocal()
 
+
 def handle_query(user_id, text):
-    text = (text or "").strip().lower()
+    text = (text or "").strip()
     if not text:
         return "Please type a command (try 'help')."
 
+    lower = text.lower()
+
     # HELP
-    if "help" in text:
-        return ("Commands:\n"
-                "- show meds → list medications\n"
-                "- next med → next medication scheduled\n"
-                "- add med NAME;DOSE;HH:MM → add medication\n"
-                "- latest bp → show last blood pressure record")
+    if "help" in lower:
+        return (
+            "Commands:\n"
+            "- show meds → list medications\n"
+            "- next med → next medication scheduled\n"
+            "- add med NAME;DOSE;HH:MM → add medication\n"
+            "- latest bp → show last blood pressure record"
+        )
 
     # SHOW MEDS
-    if "show meds" in text or "list meds" in text:
+    if "show meds" in lower or "list meds" in lower:
         meds = session.query(Medication).filter_by(user_id=user_id).order_by(Medication.time).all()
         if not meds:
             return "No medications found."
-        return "\n".join([f"{m.name} — {m.dose or ''} at {m.time}" for m in meds])
+        lines = []
+        for m in meds:
+            lines.append(f"{m.name} — {m.dose or ''} at {m.time}")
+        return "\n".join(lines)
 
     # NEXT MED
-    if "next med" in text or "next medication" in text:
+    if "next med" in lower or "next medication" in lower:
         meds = session.query(Medication).filter_by(user_id=user_id).all()
         if not meds:
             return "No medications listed."
@@ -52,19 +60,19 @@ def handle_query(user_id, text):
                 continue
         if not upcoming:
             return "No valid medication times found."
-        # sort by nearest future (negative = already passed, so prefer smallest positive or least negative)
+        # sort by nearest future (prefer soonest)
         upcoming.sort(key=lambda x: (x[0] < 0, abs(x[0])))
         next_med = upcoming[0][1]
         return f"Next medication: {next_med.name} — {next_med.dose or ''} at {next_med.time}"
 
     # ADD MED via text
-    if text.startswith("add med "):
-        payload = text.replace("add med ", "", 1)
+    if lower.startswith("add med "):
+        payload = text[len("add med "):]
         parts = [p.strip() for p in payload.split(";")]
         if len(parts) != 3:
             return "Invalid format. Use: add med NAME;DOSE;HH:MM"
         name, dose, t = parts
-        # basic validation of time
+        # validate time
         try:
             datetime.datetime.strptime(t, "%H:%M")
         except Exception:
@@ -79,13 +87,16 @@ def handle_query(user_id, text):
             return f"Error saving medication: {e}"
 
     # LATEST BP
-    if "latest bp" in text or text == "bp":
-        rec = (session.query(HealthRecord)
-                     .filter_by(user_id=user_id, type="bp")
-                     .order_by(HealthRecord.recorded_at.desc())
-                     .first())
+    if "latest bp" in lower or lower == "bp":
+        rec = (
+            session.query(HealthRecord)
+            .filter_by(user_id=user_id, type="bp")
+            .order_by(HealthRecord.recorded_at.desc())
+            .first()
+        )
         if rec:
             return f"Latest BP: {rec.value} (recorded {rec.recorded_at.strftime('%Y-%m-%d %H:%M')})"
         return "No BP records found."
 
+    # Default
     return "Sorry, I didn't understand. Type 'help' for a list of commands."

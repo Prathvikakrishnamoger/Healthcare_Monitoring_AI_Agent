@@ -28,17 +28,72 @@ def minutes_until(time_hhmm):
     return int((med_dt - now).total_seconds() // 60)
 
 
-#------------------------ Initialize database
+# ------------------------ Initialize database ------------------------
+from models import init_db, get_engine_and_session, User, Medication, HealthRecord
+import os
+import datetime as _dt
+
+# Step 1: Create tables if not exist
 init_db()
+
+# Step 2: Get DB engine and session
 engine, SessionLocal = get_engine_and_session()
 session = SessionLocal()
 
-st.set_page_config(page_title="Healthcare Monitoring AI Agent", layout="centered")
-st.title("💊 Healthcare Monitoring AI Agent — Week 2 Day 2")
+# Step 3: Auto-seed default user & sample data (only first time)
+def seed_default_data():
+    """Create one default Test User with example medication and health record."""
+    s = SessionLocal()
+    if s.query(User).count() == 0:
+        default_user = User(name="Test User", dob=None, gender=None, notes="Auto-seeded user")
+        s.add(default_user)
+        s.commit()
 
-# ------------------Quick alert for any critical recent records (last 24 hours)
-from app_utils import parse_bp, parse_sugar
-import datetime as _dt
+        # Add a sample medication
+        med = Medication(
+            user_id=default_user.id,
+            name="Vitamin D",
+            dose="1 tab",
+            time="20:00",
+            frequency="Daily",
+            notes="Auto-seeded medication"
+        )
+
+        # Add a sample health record
+        rec = HealthRecord(
+            user_id=default_user.id,
+            type="bp",
+            value="120/80",
+            recorded_at=_dt.datetime.now(),
+            notes="Auto-seeded BP record"
+        )
+
+        s.add_all([med, rec])
+        s.commit()
+        print("✅ Database initialized and sample data added.")
+    s.close()
+
+# Step 4: Run seeding logic if no DB file or user data exists
+db_path = os.getenv("DB_PATH", "sqlite:///meds.db")
+if db_path.startswith("sqlite:///"):
+    local_db_file = db_path.replace("sqlite:///", "")
+    if not os.path.exists(local_db_file):
+        print("ℹ Creating new database file and seeding default data...")
+        seed_default_data()
+    else:
+        # Check if user table empty (for safety)
+        if session.query(User).count() == 0:
+            print("ℹ Database exists but no users found — seeding default data...")
+            seed_default_data()
+else:
+    # For non-sqlite databases, just ensure at least one user exists
+    if session.query(User).count() == 0:
+        seed_default_data()
+
+# ------------------------ Streamlit Page Setup ------------------------
+import streamlit as st
+st.set_page_config(page_title="Healthcare Monitoring AI Agent", layout="centered")
+st.title("💊 Healthcare Monitoring AI Agent")
 
 
 

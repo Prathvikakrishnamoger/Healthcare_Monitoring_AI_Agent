@@ -3,3 +3,5 @@ pandas
 sqlalchemy 
 python-dotenv 
 tabulate 
+langchain
+openai
