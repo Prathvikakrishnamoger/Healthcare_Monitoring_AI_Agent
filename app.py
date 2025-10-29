@@ -40,39 +40,82 @@ init_db()
 engine, SessionLocal = get_engine_and_session()
 session = SessionLocal()
 
-# Step 3: Auto-seed default user & sample data (only first time)
-def seed_default_data():
-    """Create one default Test User with example medication and health record."""
+# ------------------------ Step 3: Auto-seed default user & sample data (only first time) ------------------------
+from seed_data import seed_default_data
+import datetime as dt
+
+def initialize_default_data():
+    """Automatically create default user and sample records if DB empty."""
+    engine, SessionLocal = get_engine_and_session()
     s = SessionLocal()
-    if s.query(User).count() == 0:
-        default_user = User(name="Test User", dob=None, gender=None, notes="Auto-seeded user")
-        s.add(default_user)
-        s.commit()
+    try:
+        # Check if user table is empty
+        if s.query(User).count() == 0:
+            print("Seeding default user with example medication and health record...")
+            # Create default user
+            default_user = User(
+                name="Test User",
+                dob="1990-01-01",
+                phone="9999999999",
+                notes="Auto-seeded user"
+            )
+            s.add(default_user)
+            s.commit()
 
-        # Add a sample medication
-        med = Medication(
-            user_id=default_user.id,
-            name="Vitamin D",
-            dose="1 tab",
-            time="20:00",
-            frequency="Daily",
-            notes="Auto-seeded medication"
-        )
+            # Add sample medications
+            meds = [
+                Medication(
+                    user_id=default_user.id,
+                    name="Aspirin",
+                    dose="75 mg",
+                    time="08:00",
+                    frequency="Daily",
+                    notes="Auto-seeded medication"
+                ),
+                Medication(
+                    user_id=default_user.id,
+                    name="Vitamin D",
+                    dose="1 tab",
+                    time="20:00",
+                    frequency="Daily",
+                    notes="Auto-seeded medication"
+                ),
+            ]
+            s.add_all(meds)
+            s.commit()
 
-        # Add a sample health record
-        rec = HealthRecord(
-            user_id=default_user.id,
-            type="bp",
-            value="120/80",
-            recorded_at=_dt.datetime.now(),
-            notes="Auto-seeded BP record"
-        )
+            # Add sample health records
+            records = [
+                HealthRecord(
+                    user_id=default_user.id,
+                    type="bp",
+                    value="120/78",
+                    recorded_at=dt.datetime.now(),
+                    notes="Auto-seeded BP record"
+                ),
+                HealthRecord(
+                    user_id=default_user.id,
+                    type="sugar",
+                    value="110",
+                    recorded_at=dt.datetime.now(),
+                    notes="Auto-seeded sugar record"
+                ),
+            ]
+            s.add_all(records)
+            s.commit()
 
-        s.add_all([med, rec])
-        s.commit()
-        print("✅ Database initialized and sample data added.")
-    s.close()
+            print("✅ Database initialized and sample data added.")
+        else:
+            print("ℹ Database already has data.")
+    except Exception as e:
+        print(f"❌ Error during seeding: {e}")
+        s.rollback()
+    finally:
+        s.close()
 
+# Run safe seeding logic (once)
+initialize_default_data()
+#------------------------------
 # Step 4: Run seeding logic if no DB file or user data exists
 db_path = os.getenv("DB_PATH", "sqlite:///meds.db")
 if db_path.startswith("sqlite:///"):
