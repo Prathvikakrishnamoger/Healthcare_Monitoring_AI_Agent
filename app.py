@@ -170,6 +170,7 @@ if not users:
 user = session.query(User).filter_by(name=user_choice).first()
 st.header(f"Welcome, {user.name}")
 #--------------alert code---------
+from app_utils import parse_bp, parse_sugar
 recent_critical = []
 now = _dt.datetime.now()
 day_ago = now - _dt.timedelta(hours=24)
