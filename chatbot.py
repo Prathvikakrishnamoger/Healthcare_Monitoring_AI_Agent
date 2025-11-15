@@ -35,12 +35,12 @@ def handle_query(user_id, text):
 
     # SHOW MEDS
     if "show meds" in lower or "list meds" in lower:
-        meds = session.query(Medication).filter_by(user_id=user_id).order_by(Medication.time).all()
+        meds = session.query(Medication).filter_by(user_id=user_id).order_by(Medication.times).all()
         if not meds:
             return "No medications found."
         lines = []
         for m in meds:
-            lines.append(f"{m.name} — {m.dose or ''} at {m.time}")
+            lines.append(f"{m.name} — {m.dose or ''} at {m.times}")
         return "\n".join(lines)
 
     # NEXT MED
@@ -52,7 +52,7 @@ def handle_query(user_id, text):
         upcoming = []
         for m in meds:
             try:
-                med_time = datetime.datetime.strptime(m.time, "%H:%M").time()
+                med_time = datetime.datetime.strptime(m.times, "%H:%M").time()
                 med_dt = datetime.datetime.combine(now.date(), med_time)
                 delta_min = int((med_dt - now).total_seconds() / 60)
                 upcoming.append((delta_min, m))
@@ -63,7 +63,7 @@ def handle_query(user_id, text):
         # sort by nearest future (prefer soonest)
         upcoming.sort(key=lambda x: (x[0] < 0, abs(x[0])))
         next_med = upcoming[0][1]
-        return f"Next medication: {next_med.name} — {next_med.dose or ''} at {next_med.time}"
+        return f"Next medication: {next_med.name} — {next_med.dose or ''} at {next_med.times}"
 
     # ADD MED via text
     if lower.startswith("add med "):
@@ -81,7 +81,7 @@ def handle_query(user_id, text):
             med = Medication(user_id=user_id, name=name.title(), dose=dose, time=t, frequency="Daily")
             session.add(med)
             session.commit()
-            return f"Added medication: {med.name} at {med.time}"
+            return f"Added medication: {med.name} at {med.times}"
         except Exception as e:
             session.rollback()
             return f"Error saving medication: {e}"
