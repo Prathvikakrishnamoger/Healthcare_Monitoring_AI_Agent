@@ -1,12 +1,16 @@
 # app.py 
 
 import streamlit as st
+<<<<<<< HEAD
 from nlp_utils import interpret_query
 from health_query_engine import answer_parsed_query
+=======
+>>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
 import re
 import os
 import math
 import pandas as pd
+<<<<<<< HEAD
 import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
@@ -24,6 +28,10 @@ try:
     init_india_db()
 except Exception:
     pass
+=======
+
+from datetime import datetime, date, time, timezone, timedelta
+>>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
 
 # ---------------- Time Formatting Helper ----------------
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -269,8 +277,11 @@ with st.form("add_med_form_v1"):
     notes = st.text_area("Notes (optional)")
     submit_med = st.form_submit_button("Add Medication")
     if submit_med:
+<<<<<<< HEAD
         # at top of file where imports are (only once)
         # inside your Add Medication form submit code (replace or expand)
+=======
+>>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
         tstr = time_input.strftime("%H:%M")
         if not mname.strip():
             st.error("Medication name is required.")
@@ -279,6 +290,7 @@ with st.form("add_med_form_v1"):
         elif not validate_time_str(tstr):
             st.error("Time must be in HH:MM format.")
         else:
+<<<<<<< HEAD
             # Build list of current medication names for this user
             try:
                 if agent and hasattr(agent, "list_medications"):
@@ -407,6 +419,28 @@ with st.form("add_med_form_v1"):
                 except Exception as e:
                     st.error(f"Error adding medication: {e}")
 
+=======
+            try:
+                if agent and hasattr(agent, "add_medication"):
+                    medrec = agent.add_medication(user['id'] if isinstance(user, dict) else user.id, mname.strip(), dose.strip(), tstr, frequency=freq, notes=notes.strip() or None)
+                    st.success(f"✅ Added {mname.strip()} at {tstr}")
+                    st.rerun()
+                elif db_module and hasattr(db_module, "add_medication"):
+                    db_module.add_medication(name=mname.strip(), dose=dose.strip(), times=tstr, user_id=(user['id'] if isinstance(user, dict) else user.id), frequency=freq, notes=notes.strip() or None)
+                    st.success(f"✅ Added {mname.strip()} at {tstr}")
+                    st.rerun()
+                elif session and Medication is not None:
+                    med = Medication(user_id=(user['id'] if isinstance(user, dict) else user.id), name=mname.strip(), dose=dose.strip(), time=tstr, frequency=freq, notes=notes.strip())
+                    session.add(med)
+                    session.commit()
+                    st.success(f"✅ Added {med.name} at {med.time}")
+                    st.rerun()
+                else:
+                    st.error("No DB backend is available to save the medication.")
+            except Exception as e:
+                st.error(f"Error adding medication: {e}")
+
+>>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
 # ---------------- Medication List + actions (Day 7 step 3) ----------------
 st.subheader("📋 Medication List")
 try:
@@ -495,6 +529,7 @@ if meds:
 else:
     st.info("No medications found.")
 
+<<<<<<< HEAD
 st.markdown("---")
 st.subheader("🔎 Medication Interaction Scan")
 st.subheader("⚠️ Interaction Alerts")
@@ -551,6 +586,8 @@ else:
                 st.write(f"- *{r['a']}* ↔ *{r['b']}* — {r['severity'].upper()}: {r['desc']}")
             st.write("If you see important interactions, consult a clinician before taking both drugs together.")
 
+=======
+>>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
 # ---------------- Fitness / Activity (Day 4) ----------------
 st.markdown("---")
 st.subheader("🏃 Fitness / Activity")
@@ -576,6 +613,8 @@ if add_fit:
             rec = FitnessRecord(user_id=(user['id'] if isinstance(user, dict) else user.id), steps=int(f_steps) if f_steps else None, calories=int(f_cal) if f_cal else None, date=rec_iso, notes=(f_notes.strip() or None))
             session.add(rec)
             session.commit()
+<<<<<<< HEAD
+=======
         else:
             st.error("No backend available to save fitness record.")
         st.success("✅ Fitness record saved.")
@@ -583,6 +622,122 @@ if add_fit:
     except Exception as e:
         st.error(f"Error saving fitness record: {e}")
 
+# CSV import for fitness (optional)
+st.markdown("Import fitness from CSV (optional) — columns: date,steps,calories")
+csv_file = st.file_uploader("Upload CSV", type=["csv"], key="fit_csv")
+if csv_file is not None:
+    try:
+        df_csv = pd.read_csv(csv_file)
+        count = 0
+        for _, row in df_csv.iterrows():
+            rd = None
+            if "date" in row and not pd.isna(row["date"]):
+                rd = str(row["date"])
+            steps = int(row["steps"]) if ("steps" in row and not pd.isna(row["steps"])) else None
+            calories = int(row["calories"]) if ("calories" in row and not pd.isna(row["calories"])) else None
+            rec_date_iso = None
+            if rd:
+                try:
+                    rec_dt = pd.to_datetime(rd, errors="coerce")
+                    if not pd.isna(rec_dt):
+                        rec_date_iso = rec_dt.to_pydatetime().isoformat()
+                except Exception:
+                    rec_date_iso = None
+            if agent and hasattr(agent, "add_fitness_record"):
+                agent.add_fitness_record(user_id=(user['id'] if isinstance(user, dict) else user.id), steps=steps, calories=calories, record_date=rec_date_iso, notes="imported-csv")
+            elif db_module and hasattr(db_module, "add_fitness_record"):
+                db_module.add_fitness_record(user_id=(user['id'] if isinstance(user, dict) else user.id), steps=steps, calories=calories, record_date=rec_date_iso, notes="imported-csv")
+            count += 1
+        st.success(f"Imported {count} rows.")
+        st.rerun()
+    except Exception as e:
+        st.error(f"CSV import failed: {e}")
+
+# Show recent fitness logs
+st.markdown("---")
+st.subheader("Recent fitness logs:")
+
+try:
+    if agent and hasattr(agent, "list_fitness_records"):
+        fit_recs = agent.list_fitness_records(user['id'] if isinstance(user, dict) else user.id, limit=30)
+    elif db_module and hasattr(db_module, "list_fitness_records"):
+        fit_recs = db_module.list_fitness_records(user_id=(user['id'] if isinstance(user, dict) else user.id), limit=30)
+    elif session and FitnessRecord is not None:
+        fit_recs = session.query(FitnessRecord).filter_by(user_id=(user['id'] if isinstance(user, dict) else user.id)).order_by(FitnessRecord.date.desc()).limit(30).all()
+    else:
+        fit_recs = []
+except Exception:
+    fit_recs = []
+
+if not fit_recs:
+    st.info("No fitness records yet. Add one above.")
+else:
+    disp_rows = []
+    for r in fit_recs:
+        if isinstance(r, dict):
+            rec_date = r.get("record_date") or r.get("date") or r.get("recorded_at")
+            steps = r.get("steps") or 0
+            notes = r.get("notes") or ""
+        else:
+            rec_date = getattr(r, "date", None) or getattr(r, "record_date", None) or getattr(r, "recorded_at", None)
+            steps = getattr(r, "steps", 0) or 0
+            notes = getattr(r, "notes", "") or ""
+        if isinstance(rec_date, str):
+            disp_date = rec_date
+        else:
+            try:
+                disp_date = pd.to_datetime(rec_date, errors="coerce").to_pydatetime().isoformat()
+            except Exception:
+                disp_date = str(rec_date)
+        disp_rows.append({"date": disp_date, "steps": steps})
+        st.write(f"- {disp_date} — Steps: {steps} {(' — ' + notes) if notes else ''}")
+
+    try:
+        avg_steps = int(pd.Series([r["steps"] for r in disp_rows]).mean()) if disp_rows else 0
+        st.write(f"Average steps (shown range): {avg_steps}")
+    except Exception:
+        pass
+
+    df = pd.DataFrame(disp_rows)
+    if not df.empty:
+        df["date_parsed"] = pd.to_datetime(df["date"], errors="coerce")
+        df = df.set_index("date_parsed").sort_index()
+        st.line_chart(df["steps"])
+
+# ---------------- Health Record Form ----------------
+st.markdown("---")
+st.subheader("Add Health Record 🩺")
+with st.form("add_health_form_v1"):
+    htype = st.selectbox("Type", ["bp", "sugar", "weight"])
+    hvalue = st.text_input("Value (e.g., BP: 120/80  |  Sugar: 110)")
+    hnotes = st.text_area("Notes")
+    add_health = st.form_submit_button("Add Record")
+    if add_health:
+        if hvalue.strip():
+            try:
+                if agent and hasattr(agent, "add_health_record"):
+                    agent.add_health_record(user_id=(user['id'] if isinstance(user, dict) else user.id), type_=htype, value=hvalue.strip(), notes=hnotes.strip() or None)
+                elif db_module and hasattr(db_module, "add_health_record"):
+                    db_module.add_health_record(user_id=(user['id'] if isinstance(user, dict) else user.id), type_=htype, value=hvalue.strip(), notes=hnotes.strip() or None)
+                elif session and HealthRecord is not None:
+                    rec = HealthRecord(user_id=(user['id'] if isinstance(user, dict) else user.id), type=htype, value=hvalue.strip(), notes=hnotes.strip() or None)
+                    session.add(rec)
+                    session.commit()
+                else:
+                    st.error("No backend available to save health record.")
+                st.success("✅ Health record added!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error saving health record: {e}")
+>>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
+        else:
+            st.error("No backend available to save fitness record.")
+        st.success("✅ Fitness record saved.")
+        st.rerun()
+    except Exception as e:
+        st.error(f"Error saving fitness record: {e}")
+
+<<<<<<< HEAD
 # CSV import for fitness (optional)
 st.markdown("Import fitness from CSV (optional) — columns: date,steps,calories")
 csv_file = st.file_uploader("Upload CSV", type=["csv"], key="fit_csv")
@@ -1020,11 +1175,28 @@ except Exception as e:
     # log trace to console only
     print("Error fetching records:", e)
     traceback.print_exc()
+=======
+# ---------------- Show recent health records ----------------
+st.markdown("---")
+st.subheader("Recent Health Records 🧾")
+
+try:
+    if agent and hasattr(agent, "list_health_records"):
+        records = agent.list_health_records(user['id'] if isinstance(user, dict) else user.id, limit=20)
+    elif db_module and hasattr(db_module, "list_health_records"):
+        records = db_module.list_health_records(user_id=(user['id'] if isinstance(user, dict) else user.id), limit=20)
+    elif session and HealthRecord is not None:
+        records = session.query(HealthRecord).filter_by(user_id=(user['id'] if isinstance(user, dict) else user.id)).order_by(HealthRecord.recorded_at.desc()).limit(20).all()
+    else:
+        records = []
+except Exception:
+>>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
     records = []
 
 if not records:
     st.info("No health records yet.")
 else:
+<<<<<<< HEAD
     # render as nice table-like list
     for r in records:
         try:
@@ -1081,6 +1253,39 @@ st.markdown("---")
 
 
 # ----------------  Basic health-data analysis & charts ----------------
+=======
+    for r in records:
+        ts = fmt_dt_for_display(r.recorded_at if not isinstance(r, dict) else r.get("recorded_at"))
+        note = f" — {r.notes}" if (not isinstance(r, dict) and getattr(r, "notes", None)) else (f" — {r.get('notes')}" if isinstance(r, dict) and r.get("notes") else "")
+        extra = ""
+        alert = None
+
+        # classify reading
+        try:
+            value = r.value if not isinstance(r, dict) else r.get("value")
+            typ = r.type if not isinstance(r, dict) else r.get("type")
+            if typ == "bp":
+                extra = parse_bp(value)
+                if "crisis" in extra.lower() or "emergency" in extra.lower():
+                    alert = f"⚠ {extra}"
+            elif typ == "sugar":
+                extra = parse_sugar(value)
+                if "emergency" in extra.lower() or "very high" in extra.lower() or "low" in extra.lower():
+                    alert = f"⚠ {extra}"
+            elif typ == "weight":
+                extra = f"{value}"
+        except Exception:
+            extra = ""
+
+        display = f"- {typ.upper() if 'typ' in locals() else 'REC'} | {value} | {extra} | {ts}{note}"
+        if alert:
+            st.warning(display)
+            st.error(alert)
+        else:
+            st.write(display)
+
+# ---------------- Day 5: Basic health-data analysis & charts ----------------
+>>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
 st.markdown("---")
 st.subheader("📊 Health analytics (last 7 days)")
 
@@ -1263,6 +1468,7 @@ try:
 except Exception:
     st.write("Charts unavailable (pandas required or data parsing issue).")
 
+<<<<<<< HEAD
 
 
 # ---------------- Health Report Generation ----------------
@@ -1788,6 +1994,8 @@ st.download_button("📥 Download XML", xml_bytes, "health_export.xml", "applica
 
 
 
+=======
+>>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
 # ---------------- Reminders (place this after the Medication List block) ----------------
 st.markdown("---")
 st.subheader("⏰ Reminders")
@@ -1847,6 +2055,7 @@ if reminders:
         name_to_mark = st.selectbox("Pick medication", [r["name"] + " @ " + r["time"] for r in reminders], key="mark_med_select")
         if st.button("Mark taken"):
             st.success(f"Marked {name_to_mark} as taken .")
+<<<<<<< HEAD
 # ---------------- Natural Language Query Section ----------------
 st.markdown("---")
 st.subheader("💬 Ask Health Questions")
@@ -1867,6 +2076,8 @@ if user_question:
     response = answer_parsed_query(parsed, user_id=uid)
 
     st.success(response)
+=======
+>>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
 
 
 
