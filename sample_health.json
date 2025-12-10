@@ -1,0 +1,9 @@
+{
+  "health_records": [
+    {"type":"bp","value":"130/85","notes":"morning"},
+    {"type":"sugar","value":"110","notes":"fasting"}
+  ],
+  "fitness": [
+    {"steps":2000,"calories":70,"timestamp":"2025-11-14T08:00:00Z"}
+  ]
+}

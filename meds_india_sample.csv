@@ -1,0 +1,4 @@
+name,generic,brand,form,strength,source,interacts_with,severity,interaction_text
+Ciprofloxacin,Ciprofloxacin,Ciplo,tab,500 mg,IndiaDB,Tizanidine,High,"Ciprofloxacin may greatly increase levels/effects of tizanidine - contraindicated."
+Tizanidine,Tizanidine,MuscleX,tab,2 mg,IndiaDB,Ciprofloxacin,High,"Tizanidine interaction with ciprofloxacin - avoid combination."
+Paracetamol,Paracetamol,Aceta,tab,500 mg,IndiaDB,,,

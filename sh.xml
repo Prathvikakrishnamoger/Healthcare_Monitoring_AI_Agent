@@ -1,0 +1,9 @@
+<HealthData>
+  <HealthRecords>
+    <record type="bp" value="135/88" notes="post-walk" />
+    <record type="sugar" value="120" notes="after meal" />
+  </HealthRecords>
+  <FitnessRecords>
+    <fitness steps="3500" calories="120" timestamp="2025-11-14T18:00:00Z" />
+  </FitnessRecords>
+</HealthData>
