@@ -138,33 +138,33 @@ HEALTHCARE_MONITORING_AI_AGENT/
 
 │
 
-├── app.py                  # Main Streamlit application
+├── app.py                            # Main Streamlit application
 
-├── chatbot.py              # Health assistant chatbot logic
+├── chatbot.py                        # Health assistant chatbot logic
 
-├── nlp_utils.py            # NLP utilities
+├── nlp_utils.py                      # NLP utilities
 
-├── health_query_engine.py  # Health query processing
+├── health_query_engine.py            # Health query processing
 
-├── db.py                   # SQLite database operations
+├── db.py                             # SQLite database operations
 
-├── agent.py                # Agent abstraction layer
+├── agent.py                          # Agent abstraction layer
 
-├── drug_interactions.py    # Medication interaction rules
+├── drug_interactions.py              # Medication interaction rules
 
-├── india_meds/             # Indian medication database & helpers
+├── india_meds/                       # Indian medication database & helpers
 
-├── meds_db.py              # Medication database utilities
+├── meds_db.py                        # Medication database utilities
 
-├── interactions.py         # Interaction logic
+├── interactions.py                   # Interaction logic
 
-├── tests/                  # Test scripts
+├── tests/                            # Test scripts
 
-├── requirements.txt        # Dependencies
+├── requirements.txt                  # Dependencies
 
-├── health.db               # Main database (local)
+├── health.db                         # Main database (local)
 
-└── README.md               # Project documentation
+└── README.md                         # Project documentation
 
 🚀 How to Run the Project
 
