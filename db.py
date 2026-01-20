@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import List, Dict, Optional, Any
 import os
 
-<<<<<<< HEAD
 DB_PATH = r"C:\Users\chand\desktop\health-ai-agent\health.db"
 
 def get_conn():
@@ -37,7 +36,6 @@ def get_conn():
         except Exception as e:
             print("ERROR connecting to DB:", e)
             raise
-=======
 DB_PATH = os.getenv("DB_PATH", "health.db")
 
 def get_conn():
@@ -45,7 +43,6 @@ def get_conn():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
->>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
 
 def init_db():
     """Create tables if they don't exist."""
@@ -112,7 +109,6 @@ def init_db():
     FOREIGN KEY(medication_id) REFERENCES medications(id)
     )
     """)
-<<<<<<< HEAD
     # inside init_db() after med_taken table creation
     c.execute("""
     CREATE TABLE IF NOT EXISTS alerts (
@@ -144,8 +140,6 @@ def init_db():
         FOREIGN KEY(user_id) REFERENCES users(id)
     )
     """)
-=======
->>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
     
     conn.commit()
     conn.close()
@@ -255,7 +249,6 @@ def get_user(user_id: int) -> Optional[Dict]:
     conn.close()
     return dict(row) if row else None
 
-<<<<<<< HEAD
 def add_alert(user_id: int, medication_a: str, medication_b: str, severity: str, description: str, note: Optional[str] = None) -> int:
     conn = get_conn()
     c = conn.cursor()
@@ -370,8 +363,6 @@ def delete_goal(goal_id: int) -> bool:
     conn.close()
     return True
 
-=======
->>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
 # ---------- Medication taken (events) ----------
 def add_med_taken(user_id: int, medication_id: int, taken_at: Optional[str] = None, note: Optional[str] = None) -> int:
     """

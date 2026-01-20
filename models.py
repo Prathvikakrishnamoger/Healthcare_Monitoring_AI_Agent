@@ -1,5 +1,4 @@
 # models.py
-<<<<<<< HEAD
 """
 SQLAlchemy models and DB helpers for Healthcare Monitoring AI Agent.
 Provides: User, Medication, HealthRecord, FitnessRecord,
@@ -10,14 +9,12 @@ from sqlalchemy import Column, Integer, String, DateTime, Text, create_engine, F
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from datetime import datetime, timezone
 import os
-=======
 from datetime import datetime
 from typing import Optional
 from sqlalchemy import (
     Column, Integer, String, Text, DateTime, create_engine, ForeignKey
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
->>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
 
 # Base declarative class
 Base = declarative_base()
@@ -43,7 +40,6 @@ class User(Base):
 
 class Medication(Base):
     __tablename__ = "medications"
-<<<<<<< HEAD
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
@@ -92,7 +88,6 @@ def get_engine_and_session(db_path: str = DB_PATH):
 def init_db(db_path: str = DB_PATH):
     engine, _ = get_engine_and_session(db_path)
     Base.metadata.create_all(engine)
-=======
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
@@ -161,4 +156,3 @@ def init_db(db_url: Optional[str] = None):
     engine, _ = get_engine_and_session(db_url)
     # create all tables if they do not exist
     Base.metadata.create_all(bind=engine)
->>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964

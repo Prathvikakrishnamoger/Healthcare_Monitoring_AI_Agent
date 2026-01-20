@@ -1,10 +1,7 @@
 # agent.py
 from typing import List, Optional, Dict, Any
 import db
-<<<<<<< HEAD
 from db import get_conn
-=======
->>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
 
 # ensure DB/tables exist
 try:
@@ -15,11 +12,7 @@ except Exception:
 class HealthAgent:
     """Simple agent wrapper around db.py functions."""
 
-<<<<<<< HEAD
     def __init__(self):
-=======
-    def _init_(self):
->>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
         pass
 
     # Users
@@ -52,7 +45,6 @@ class HealthAgent:
 
     def delete_medication(self, med_id:int) -> bool:
         return db.delete_medication(med_id)
-<<<<<<< HEAD
     
     def add_alert(self, user_id:int, medication_a:str, medication_b:str, severity:str="moderate", description:Optional[str]=None, note:Optional[str]=None):
         if hasattr(db, "add_alert"):
@@ -62,8 +54,6 @@ class HealthAgent:
         if hasattr(db, "list_alerts"):
             return db.list_alerts(user_id, limit)
         return []
-=======
->>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
 
     # Health records
     def add_health_record(self, user_id:int, type_:str, value:str, notes:Optional[str]=None) -> Dict[str,Any]:
@@ -79,7 +69,6 @@ class HealthAgent:
         return {"id": fid, "user_id": user_id, "steps": steps, "calories": calories, "record_date": record_date, "notes": notes}
 
     def list_fitness_records(self, user_id:int, limit:int=100) -> List[Dict]:
-<<<<<<< HEAD
         return db.list_fitness_records(user_id, limit)
     # ---------- Goals ----------
     # in agent.py (example)
@@ -169,6 +158,4 @@ class HealthAgent:
         except Exception as e:
             # bubble up or log — here we re-raise so caller can show an error message
             raise
-=======
         return db.list_fitness_records(user_id, limit)
->>>>>>> 6d768788236e5406ac5ab5cf55c6a3d4fcc57964
